@@ -33,15 +33,12 @@ const Method = enum {
     OPTION,
     DELETE,
     pub fn formString(s: []const u8) !Method {
-        return switch (true) {
-            std.mem.eql(u8,"GET",s) => .GET,
-            std.mem.eql(u8,"POST",s) => .POST,
-            std.mem.eql(u8,"PUT",s) => .PUT,
-            std.mem.eql(u8,"PATCH",s) => .PATCH,
-            std.mem.eql(u8,"OPTION",s) => .OPTION,
-            std.mem.eql(u8,"DELETE",s) => .DELETE,
-            else => ParsingError.MethodNotValid,
-        };
+        if (std.mem.eql(u8,"GET",s))return .POST;
+        if (std.mem.eql(u8,"PUT",s))return .PUT;
+        if (std.mem.eql(u8,"PATCH",s))return .PATCH;
+        if (std.mem.eql(u8,"OPTION",s))return .OPTION;
+        if (std.mem.eql(u8,"DELETE",s))return .DELETE;
+        return ParsingError.MethodNotValid;
     }
 };
 
@@ -49,11 +46,9 @@ const Version = enum {
     @"1.1",
     @"2",
     pub fn formString(s: []const u8) !Version{
-        return switch (true) {
-            std.mem.eql(u8,"HTTP/1.1",s) => .@"1.1",
-            std.mem.eql(u8,"HTTP/2",s) => .@"2",
-            else => ParsingError.VersionNotValid
-        };
+        if(std.mem.eql(u8,"HTTP/1.1",s)) return .@"1.1";
+        if(std.mem.eql(u8,"HTTP/2",s)) return .@"2";
+        return ParsingError.VersionNotValid;
     }
 };
 const HTTPContext = struct {
@@ -81,7 +76,7 @@ const HTTPContext = struct {
 
     pub fn init(allocator: std.mem.Allocator,stream: net.Stream) !HTTPContext {
         var first_line = try stream.reader().readUntilDelimiterAlloc(allocator,'\n',std.math.maxInt(usize));
-        first_line = first_line[0..first_line.len];
+        first_line = first_line[0..first_line.len - 1];
         var first_line_iter = std.mem.split(u8,first_line," ");
 
         const method = first_line_iter.next().?;
